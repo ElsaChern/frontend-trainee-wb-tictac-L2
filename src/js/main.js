@@ -4,7 +4,7 @@ const players = document.getElementsByName("player");
 const startBtn = document.querySelector("#startBtn");
 const newGame = document.querySelector(".new-game");
 
-let gameDifficulty = 0;
+let gameDifficulty = "0";
 let gameFormat = "twoPlayers";
 
 difficulty.forEach((item) => {
@@ -42,35 +42,53 @@ const win = [
 ];
 
 statusTxt.textContent = `${player} твой ход`;
+
+const makeAMove = (cell) => {
+  let innerHTML = document.createElement("div");
+  innerHTML.classList.add(player);
+  innerHTML.textContent = player;
+  cell.appendChild(innerHTML);
+
+  checkWin();
+
+  if (gameEnded) {
+    return;
+  }
+
+  player = player === "x" ? "o" : "x";
+  statusTxt.textContent = `${player} твой ход`;
+};
+
+const theBestMove = () => {
+  let emptyCells = Array.from(cells).filter((cell) => cell.innerHTML === "");
+};
+
+const randomMove = () => {
+  let emptyCells = Array.from(cells).filter((cell) => cell.innerHTML === "");
+  let randomCellIndex = Math.floor(Math.random() * emptyCells.length);
+
+  return emptyCells[randomCellIndex];
+};
+
+const computerChoise = () => {
+  if (gameDifficulty === "1") {
+    return theBestMove();
+  } else {
+    return randomMove();
+  }
+};
+
 cells.forEach((cell) => {
   cell.addEventListener("click", () => {
-    console.log("HELLO!");
-    if (gameEnded) {
+    if (gameEnded || cell.innerHTML !== "") {
       return;
     }
 
-    if (cell.innerHTML === "") {
-      let innerHTML = document.createElement("div");
-      innerHTML.classList.add(player);
-      innerHTML.textContent = player;
-      cell.appendChild(innerHTML);
-    } else {
-      return;
+    makeAMove(cell);
+
+    if (gameFormat === "computer") {
+      makeAMove(computerChoise());
     }
-
-    checkWin();
-
-    if (gameEnded) {
-      return;
-    }
-
-    if (player === "x") {
-      player = "o";
-    } else {
-      player = "x";
-    }
-
-    statusTxt.textContent = `${player} твой ход`;
   });
 });
 
@@ -93,13 +111,10 @@ const checkWin = () => {
     }
   }
 
-  let isCellsFilled;
-
-  isCellsFilled = Array.from(cells).map((cell) =>
+  let isCellsFilled = Array.from(cells).map((cell) =>
     ["x", "o"].includes(cell.textContent),
   );
 
-  console.log(isCellsFilled);
   if (!gameEnded && !isCellsFilled.includes(false)) {
     gameEnded = true;
     statusTxt.textContent = `Ничья!`;
@@ -112,7 +127,7 @@ newGame.addEventListener("click", () => {
 
   cells.forEach((cell) => {
     cell.innerHTML = "";
-    cell.style.cursor = "pointer";
   });
+
   statusTxt.textContent = `${player} твой ход`;
 });
