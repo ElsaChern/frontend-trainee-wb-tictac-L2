@@ -3,33 +3,75 @@ const difficulty = document.getElementsByName("difficulty");
 const players = document.getElementsByName("player");
 const startBtn = document.querySelector("#startBtn");
 const newGame = document.querySelector(".new-game");
+const statusTxt = document.querySelector("#status");
+const cells = document.querySelectorAll(".cell");
 
+// Сохраненное состояние игры
+let savedGame = JSON.parse(localStorage.getItem("game")) || {};
+
+let player = "x";
+let gameEnded = true;
 let gameDifficulty = "0";
 let gameFormat = "twoPlayers";
 let humanPlayer = "x";
 let computerPlayer = "o";
 
+// Отрисовка крестика или нолика
+const placeFigure = (cell, figure) => {
+  let innerHTML = document.createElement("div");
+  innerHTML.classList.add(figure);
+  innerHTML.textContent = figure;
+  cell.appendChild(innerHTML);
+};
+
+// Инициализируем сохраненную ранее игру
+const initGame = () => {
+  // Если нет сохранений, то ничего не делаем
+  if (Object.keys(savedGame).length === 0) {
+    return;
+  }
+
+  // Отрисовываем сохраненное поле
+  for (let i = 0; i < cells.length; i++) {
+    savedCell = savedGame.field[i];
+
+    if (savedCell !== "") {
+      placeFigure(cells[i], savedCell);
+    }
+  }
+
+  // Инициализируем остальные настройки игры
+  player = savedGame.player;
+  gameDifficulty = savedGame.gameDifficulty;
+  gameFormat = savedGame.gameFormat;
+  gameEnded = savedGame.gameEnded;
+  gameOptions.style.display = "none";
+};
+
+initGame();
+
+// Отображение сообщения о том, чей сейчас ход
+statusTxt.textContent = `${player} твой ход`;
+
+// Установливаем уровень сложности
 difficulty.forEach((item) => {
   item.addEventListener("change", () => {
     gameDifficulty = item.value;
   });
 });
 
+// Установливаем формат игры
 players.forEach((player) => {
   player.addEventListener("change", () => {
     gameFormat = player.value;
   });
 });
 
+// Скрываем окно с настройками при нажатие на кнопку начала игры
 startBtn.addEventListener("click", () => {
   gameOptions.style.display = "none";
+  gameEnded = false;
 });
-
-/// Логика для игры на 2х
-const cells = document.querySelectorAll(".cell");
-const statusTxt = document.querySelector("#status");
-let player = "x";
-let gameEnded = false;
 
 // Выигрышные комбинации
 const win = [
@@ -43,22 +85,41 @@ const win = [
   [2, 4, 6],
 ];
 
-statusTxt.textContent = `${player} твой ход`;
+// Функция для проверки выигрыша одного из игроков для функции miniMax
+const isPlayerWon = (field, player) => {
+  for (let i = 0; i < win.length; i++) {
+    if (
+      field[win[i][0]] === player &&
+      field[win[i][1]] === player &&
+      field[win[i][2]] === player
+    ) {
+      return true;
+    }
+  }
+  return false;
+};
 
+// Функция для рассчета лучшего хода компьютера
 const miniMax = (field, player) => {
+  // Доступные клетки для хода
   let emptyCells = field.filter((item) => item === "");
 
+  // Если при текущем расположении ходов выиграл человек, то отнимаем 10 очков
   if (isPlayerWon(field, humanPlayer)) {
     return { score: -10 };
+    // Если при текущем расположении ходов выиграл компьютер, то прибавляем 10 очков
   } else if (isPlayerWon(field, computerPlayer)) {
     return { score: 10 };
+    // Если при текущем расположении ходов случилась ничья, то очки не изменяются
   } else if (emptyCells.length === 0) {
     return { score: 0 };
   }
 
+  // Определяем массив возможных ходов
   let moves = [];
 
   for (let i = 0; i < field.length; i++) {
+    // Если клетка уже занята, то пропускаем её
     if (field[i] !== "") {
       continue;
     }
@@ -66,17 +127,22 @@ const miniMax = (field, player) => {
     let currentMove = {};
 
     currentMove.index = i;
+    // Делаем ход в текущую клетку
     field[i] = player;
 
     let nextPlayer = player === "x" ? "o" : "x";
+    // Запускаем рекурсию
     let result = miniMax(field, nextPlayer);
+    // Записываем в поле score наилучший возможный результат после хода в текущую клетку
     currentMove.score = result.score;
 
+    // Возвращаем поле в исходное состояние
     field[i] = "";
     moves.push(currentMove);
   }
 
   let bestMove;
+  // Ищем наилучший из возможных ходов в массиве moves
   if (player === computerPlayer) {
     let bestScore = -10000;
 
@@ -99,6 +165,7 @@ const miniMax = (field, player) => {
   return moves[bestMove];
 };
 
+// Функция для выбора лучшей клетки для следующего хода компьютера
 const theBestMove = () => {
   let field = Array.from(cells).map((cell) => cell.textContent);
 
@@ -106,6 +173,7 @@ const theBestMove = () => {
   return cells[result.index];
 };
 
+// Функция для выбора случайной клетки для следующего хода компьютера
 const randomMove = () => {
   let emptyCells = Array.from(cells).filter((cell) => cell.innerHTML === "");
   let randomCellIndex = Math.floor(Math.random() * emptyCells.length);
@@ -113,6 +181,7 @@ const randomMove = () => {
   return emptyCells[randomCellIndex];
 };
 
+// Функция для выбора стратегии по которой компьютер будет ходить. Зависит от выбора сложности
 const computerChoise = () => {
   if (gameDifficulty === "1") {
     return theBestMove();
@@ -121,11 +190,22 @@ const computerChoise = () => {
   }
 };
 
+// Функция для сохранения прогресса игры
+const saveGame = () => {
+  let currentGame = {
+    player,
+    gameEnded,
+    gameDifficulty,
+    gameFormat,
+    field: Array.from(cells).map((cell) => cell.textContent),
+  };
+
+  localStorage.setItem("game", JSON.stringify(currentGame));
+};
+
+// Функция для отображения хода текущего игрока и проверки на конец игры
 const makeAMove = (cell) => {
-  let innerHTML = document.createElement("div");
-  innerHTML.classList.add(player);
-  innerHTML.textContent = player;
-  cell.appendChild(innerHTML);
+  placeFigure(cell, player);
 
   checkWin();
 
@@ -133,10 +213,14 @@ const makeAMove = (cell) => {
     return;
   }
 
+  // После хода текущего игрока, передаём ход следующему
   player = player === "x" ? "o" : "x";
   statusTxt.textContent = `${player} твой ход`;
+  // Сохраняем игру после каждого хода
+  saveGame();
 };
 
+// По клику на клетку запускаем функцию хода человека.
 cells.forEach((cell) => {
   cell.addEventListener("click", () => {
     if (gameEnded || cell.innerHTML !== "") {
@@ -145,32 +229,25 @@ cells.forEach((cell) => {
 
     makeAMove(cell);
 
+    // Если пользователь играет с компьютером, то сразу же делаем ход за него
     if (!gameEnded && gameFormat === "computer") {
       makeAMove(computerChoise());
     }
   });
 });
 
-const isPlayerWon = (field, player) => {
-  for (let i = 0; i < win.length; i++) {
-    if (
-      field[win[i][0]] === player &&
-      field[win[i][1]] === player &&
-      field[win[i][2]] === player
-    ) {
-      return true;
-    }
-  }
-  return false;
-};
-
+// Функция для завершения игры и отображения соответствующей информации
 const gameOver = (isDraw = false) => {
   gameEnded = true;
   statusTxt.textContent = isDraw ? "Ничья!" : `Победа ${player}! `;
   newGame.style.display = "inline";
+  // Удаляем сохранения после завершения игры
+  localStorage.removeItem("game");
 };
 
+// Функция для проверки на конец игры после отображения хода каждого игрока
 const checkWin = () => {
+  // Проверяем, достигнута ли на поле одна из победных комбинаций для текущего игрока, сделавшего ход
   for (let i = 0; i < win.length; i++) {
     if (
       document.getElementById(win[i][0]).textContent === player &&
@@ -186,12 +263,13 @@ const checkWin = () => {
   }
 
   let emptyCells = Array.from(cells).filter((cell) => cell.textContent === "");
-
+  // Проверка на ничью
   if (!gameEnded && emptyCells.length === 0) {
     gameOver(true);
   }
 };
 
+// Обнуление состояния игры для начала новой
 newGame.addEventListener("click", () => {
   gameEnded = false;
   player = "x";

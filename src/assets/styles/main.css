@@ -100,11 +100,6 @@ table tr td:last-child {
     border-radius: 10px;
 }
 
-#restart {
-    cursor: pointer;
-    margin: 0 auto;
-}
-
 .x {
     color: darksalmon;
     position: relative;
@@ -119,7 +114,6 @@ table tr td:last-child {
     cursor: default;
 }
 
-/* modal background */
 .modal {
     position: fixed;
     left: 0;
@@ -139,13 +133,12 @@ table tr td:last-child {
     z-index: -1;
 }
 
-/* modal content */
+
 .modal-content {
     background-color: rgb(240, 240, 240);
     color: rgb(32, 32, 32);
     font-size: 2em;
     font-weight: bold;
-    /* 16 % from the top and centered */
     margin: 16% auto;
     padding: 20px;
     border: 2px solid black;
