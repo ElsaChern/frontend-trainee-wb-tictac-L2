@@ -53,24 +53,16 @@ initGame();
 // Отображение сообщения о том, чей сейчас ход
 statusTxt.textContent = `${player} твой ход`;
 
-// Установливаем уровень сложности
-difficulty.forEach((item) => {
-  item.addEventListener("change", () => {
-    gameDifficulty = item.value;
-  });
-});
-
-// Установливаем формат игры
-players.forEach((player) => {
-  player.addEventListener("change", () => {
-    gameFormat = player.value;
-  });
-});
-
 // Скрываем окно с настройками при нажатие на кнопку начала игры
 startBtn.addEventListener("click", () => {
   gameOptions.style.display = "none";
+  gameDifficulty = document.querySelector(
+    'input[name="difficulty"]:checked',
+  ).value;
+  gameFormat = document.querySelector('input[name="player"]:checked').value;
   gameEnded = false;
+
+  newGame.style.display = "none";
 });
 
 // Выигрышные комбинации
